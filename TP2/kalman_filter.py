@@ -68,11 +68,11 @@ class KalmanFilter(object):
         
         # Initialize with zeros or identity when possible
         self.x = np.zeros((dim_x, 1))        # state (mean)
-        self.P = np.identity(dim_x)       # uncertainty covariance
-        self.Q = np.zeros((dim_x,dim_x))       # process uncertainty
-        self.F = np.zeros((dim_x,dim_x))       # state transition matrix
+        self.P = np.eye(dim_x)    # uncertainty covariance
+        self.Q = np.eye(dim_x)        # process uncertainty
+        self.F = np.eye(dim_x)        # state transition matrix
         self.H = np.zeros((dim_z, dim_x))        # measurement matrix
-        self.R = np.zeros((dim_z, dim_z))        # measurement uncertainty
+        self.R = np.eye(dim_z)        # measurement uncertainty
         
     
     def predict(self, F=None, Q=None):
@@ -126,8 +126,9 @@ class KalmanFilter(object):
         y = z - np.dot(H, self.x)
         
         # Innovation covariance
-        S = self.R + np.dot(np.dot( H , self.P ), np.transpose(H) )
-        
+
+        S = R + np.dot(np.dot( H , self.P ), np.transpose(H) )
+
         # Kalman gain
         K = np.dot( np.dot(self.P , np.transpose(H) ) , np.linalg.inv(S) )
         

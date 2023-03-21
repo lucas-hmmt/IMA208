@@ -46,7 +46,7 @@ def iou_batch(bb_test, bb_gt):
             iou_row.append(iou)
         IoU.append(iou_row)
 
-    return IoU  
+    return np.array(IoU)
 
 
 def convert_bbox_to_z(bbox):
@@ -61,7 +61,7 @@ def convert_bbox_to_z(bbox):
     s = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
     r = (bbox[2] - bbox[0]) / float(bbox[3] - bbox[1])
     
-    return np.array([x, y, s, r]).reshape((4, 1))
+    return np.array([x, y, s, r]).reshape(1,4)
 
 
 def convert_x_to_bbox(z, score=None):
@@ -78,9 +78,9 @@ def convert_x_to_bbox(z, score=None):
     y2 = z[1] + h / 2.0
     
     if(score==None):
-        return np.array([x1, y1, x2, y2]).reshape((1,4))
+        return np.array([x1, y1, x2, y2]).reshape(1,4)
     else:
-        return np.array([x1, y1, x2, y2, score]).reshape((1,5))
+        return np.array([x1, y1, x2, y2, score]).reshape(1,5)
 
 
 class KalmanBoxTracker(object):
@@ -97,7 +97,7 @@ class KalmanBoxTracker(object):
         """
 
         # define a constant velocity model
-        self.kf = KalmanFilter(7, len(bbox))
+        self.kf = KalmanFilter(7, 4)
             # Initialize a KalmanFilter with the correct dimension for the state and measurement
             
         # Initialize the state transition matrix and measurement matrix assuming a constant velocity model
@@ -111,7 +111,8 @@ class KalmanBoxTracker(object):
         self.kf.Q[4:,4:] *= 0.01
         self.kf.R[2:,2:] *= 10.
 
-        self.kf.x = np.zeros(7)
+        z = convert_bbox_to_z(bbox)
+        self.kf.x = np.array([z[:,0][0], z[:,1][0], z[:,2][0], z[:,3][0], 0., 0., 0.])
         
         self.time_since_update = 0
         self.id = KalmanBoxTracker.count
@@ -132,7 +133,8 @@ class KalmanBoxTracker(object):
         self.hit_streak += 1
 
         z = convert_bbox_to_z(bbox)
-        self.kf.update(z) # write the call to the Kalman filter update
+
+        self.kf.update(z[0][0:4]) # write the call to the Kalman filter update
 
     def predict(self):
         """
