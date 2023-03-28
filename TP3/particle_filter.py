@@ -63,8 +63,8 @@ class ParticleFilter(object):
         self.likelihood = likelihood
         
         # Default values for the particles and weights
-        self.particles = xxxx
-        self.weights = xxxx
+        self.particles = np.zeros((n_particles, dim_x))
+        self.weights = np.ones(n_particles)*(1/n_particles)
         
     def resample(self, tau=None):
         if tau is None:
@@ -73,13 +73,15 @@ class ParticleFilter(object):
         threshold = tau*self.n_particles
         
         # Compute the effective sample size
-        N_eff = xxxx
+        N_eff = 1/np.sum(self.weights**2)
         
         # resample if necessary
         if N_eff <= threshold:
             # Hint: you can use numpy.random.choice
-            self.particles = xxxx
-            self.weights = xxxx
+
+            indexes = np.random.choice(self.n_particles, self.n_particles, p=self.weights.ravel())
+            self.particles = self.particles[indexes]
+            self.weights = np.ones((self.n_particles, 1))*(1/self.n_particles)
             
     def predict(self, forward=None):
         """
@@ -88,7 +90,7 @@ class ParticleFilter(object):
         if forward is None:
             forward = self.forward
             
-        self.particles = xxxx
+        self.particles = forward(self.particles) #xxxx
         
     def update(self, z, likelihood=None):
         """
@@ -98,10 +100,10 @@ class ParticleFilter(object):
             likelihood = self.likelihood
         
         # Compute the vector of likelihoods (one likelihood value per particle)
-        likelihoods = xxxx # likelihoods[i] = p(z|x_i) where x_i = particles[i]
+        likelihoods = likelihood(self.particles, z) #xxxx # likelihoods[i] = p(z|x_i) where x_i = particles[i]
         
         # Hint: formula given in slide 78 under '3. Measure'. Don't forget to normalize!
-        self.weights = xxxx
+        self.weights = (self.weights * likelihoods) / np.sum(self.weights * likelihoods) #xxxx
         
     def state_expectation(self):
         """
@@ -111,6 +113,6 @@ class ParticleFilter(object):
         Returns: numpy.array((dim_x),) 
             A 1D array containing the mean state.
         """
-        mean = xxxx
+        mean = np.average(self.particles, weights=self.weights, axis=0) #xxxx
         
         return mean
